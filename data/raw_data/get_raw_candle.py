@@ -8,9 +8,9 @@ def get_raw_candle_csv(
     file_name: str = "raw_candle.csv",
     save_path: str = "data\\raw_data\\samples\\",
     symbol: str = "BTCUSDT",
-    interval: str = "30",
+    interval: str = "1440",
     category: str = "spot",
-    days_ago: int = 7
+    days_ago: int = 21
 ) -> None:
     """
     Fetch historical candle data from Bybit API and save to CSV file.
