@@ -4,7 +4,7 @@ import os
 
 
 
-def combine_csv_files(directory_path, output_filename='dataset.csv'):
+def combine_csv_files(directory_path, output_filename='raw_dataset.csv'):
     search_pattern = os.path.join(directory_path, '*.csv')
     csv_files = glob.glob(search_pattern)
     
@@ -23,4 +23,4 @@ def combine_csv_files(directory_path, output_filename='dataset.csv'):
     return f"Объединено {len(csv_files)} файлов в {output_path}"
 
 
-combine_csv_files(directory_path="data\\ready_data\samples")
+combine_csv_files(directory_path="data\\raw_data\samples\\raw\\")

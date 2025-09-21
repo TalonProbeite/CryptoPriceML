@@ -7,7 +7,7 @@ from typing import Optional
 def process_raw_candles(
     raw_file: str,
     processed_file: Optional[str] = None,
-    threshold_pct: float = 0.05,
+    threshold_pct: float = 0.073,
     sma_period: int = 12,
     ema_period: int = 12,
     wma_period: int = 12,
@@ -106,5 +106,5 @@ def process_raw_candles(
 
     print(f"Сохранено: {processed_file} (записей: {len(df)})")
 
-# n = 4
-# process_raw_candles(raw_file=f"data\\raw_data\samples\\raw\\raw_candle_{n}.csv",processed_file=f"data\\raw_data\samples\processing\processing_candle_{n}.csv" )
+n = 8
+process_raw_candles(raw_file=f"data\\raw_data\samples\\raw\\raw_dataset.csv",processed_file=f"data\\raw_data\samples\processing\processing_candle.csv" )

@@ -4,7 +4,7 @@ import tensorflow as tf
 from keras.layers import Dense, Input, Dropout
 from keras.models import Sequential
 from keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau
-from keras.regularizers import l2
+from sklearn.preprocessing import StandardScaler
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -54,17 +54,13 @@ def plot_training_history(history, save_path=None):
 X, y = get_data_xy('data\\ready_data\\samples\\dataset.csv')
 print(f"X shape: {X.shape}, y shape: {y.shape}")
 
-# Перевод one-hot в метки классов
-y_classes = np.argmax(y, axis=1)
+# Нормализация признаков
+scaler = StandardScaler()
+X = scaler.fit_transform(X)
 
-# --------------------------
-# Вычисление class weights вручную
-# --------------------------
-num_classes = y.shape[1]
-counts = np.bincount(y_classes, minlength=num_classes)
-total = len(y_classes)
-class_weights = {i: total / (num_classes * counts[i]) for i in range(num_classes)}
-print("Class weights:", class_weights)
+# Перевод one-hot в метки классов (для проверки распределения)
+y_classes = np.argmax(y, axis=1)
+print("Классы и количество:", np.unique(y_classes, return_counts=True))
 
 # --------------------------
 # Разделение на train/test вручную
@@ -85,16 +81,20 @@ train_dataset = tf.data.Dataset.from_tensor_slices((X_train, y_train)).shuffle(l
 test_dataset = tf.data.Dataset.from_tensor_slices((X_test, y_test)).batch(32)
 
 # --------------------------
-# Нейросеть
+# Нейросеть (усиленная)
 # --------------------------
+num_classes = y.shape[1]
 model = Sequential([
     Input(shape=(X.shape[1],)),
-    Dense(32, activation="relu", kernel_regularizer=l2(1e-4)),
+    Dense(64, activation="relu"),
+    Dropout(0.3),
+    Dense(32, activation="relu"),
+    Dropout(0.3),
     Dense(num_classes, activation="softmax")
 ])
 
 model.compile(
-    optimizer=tf.keras.optimizers.Adam(learning_rate=0.001),
+    optimizer=tf.keras.optimizers.Adam(learning_rate=1e-4),
     loss="categorical_crossentropy",
     metrics=["accuracy"]
 )
@@ -104,16 +104,14 @@ lr_reduce = ReduceLROnPlateau(monitor="val_loss", factor=0.5, patience=5, verbos
 early_stop = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True)
 checkpoint = ModelCheckpoint('best_model.keras', monitor='val_loss', save_best_only=True)
 
-# Обучение с учётом class weights
+# Обучение (без class_weight)
 history = model.fit(
     train_dataset,
     validation_data=test_dataset,
     epochs=50,
-    callbacks=[early_stop, checkpoint, lr_reduce],
-    class_weight=class_weights
+    callbacks=[early_stop, checkpoint, lr_reduce]
 )
 
 plot_training_history(history)
 
-model.save("models/crypto_predictor_v4.h5")
-
+model.save("models/crypto_predictor_v8.keras")  # новый формат
