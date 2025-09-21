@@ -8,9 +8,9 @@ def get_raw_candle_csv(
     file_name: str = "raw_candle.csv",
     save_path: str = "data\\raw_data\\samples\\",
     symbol: str = "BTCUSDT",
-    interval: str = "1440",
+    interval: str = "30",
     category: str = "spot",
-    days_ago: int = 21
+    days_ago: int = 20
 ) -> None:
     """
     Fetch historical candle data from Bybit API and save to CSV file.
@@ -37,7 +37,7 @@ def get_raw_candle_csv(
         >>> get_raw_candle_csv()  # Uses all default parameters
     """
     # Calculate time range
-    end_time = datetime.now(timezone.utc) 
+    end_time = datetime.now(timezone.utc)  - timedelta(days=60)
     start_time = end_time - timedelta(days=days_ago)
 
     start_ts = int(start_time.timestamp() * 1000)
@@ -94,3 +94,6 @@ def get_raw_candle_csv(
     
     print(f"Data successfully saved to: {full_path}")
     print(f"Records fetched: {len(df)}")
+
+
+get_raw_candle_csv(file_name="raw_candle_4.csv")

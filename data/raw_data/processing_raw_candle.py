@@ -7,7 +7,7 @@ from typing import Optional
 def process_raw_candles(
     raw_file: str,
     processed_file: Optional[str] = None,
-    threshold_pct: float = 0.5,
+    threshold_pct: float = 0.05,
     sma_period: int = 12,
     ema_period: int = 12,
     wma_period: int = 12,
@@ -79,6 +79,11 @@ def process_raw_candles(
     df[f"EMA_{ema26_period}"] = df["close"].ewm(span=ema26_period, adjust=False).mean()
     df["MACD"] = df[f"EMA_{ema_period}"] - df[f"EMA_{ema26_period}"]
     df["Signal"] = df["MACD"].ewm(span=macd_signal_period, adjust=False).mean()
+    n = 14
+    df['L14'] = df['low'].rolling(window=n).min()
+    df['H14'] = df['high'].rolling(window=n).max()
+    df['%K'] = (df['close'] - df['L14']) / (df['H14'] - df['L14']) * 100
+    df['%D'] = df['%K'].rolling(window=3).mean()
 
     # Переместим колонки трендов в конец
     trend_cols = ["up", "down", "flat"]
@@ -86,7 +91,7 @@ def process_raw_candles(
     df = df[cols]
 
     if delet_incomplete_lines:
-        df = df.dropna(subset=["SMA_12", "EMA_12", "WMA_12"]).reset_index(drop=True)
+        df = df.dropna().reset_index(drop=True)
     if delet_timestamp:
         df = df.drop(columns=["timestamp"])
 
@@ -100,3 +105,6 @@ def process_raw_candles(
     df.to_csv(processed_file, index=False)
 
     print(f"Сохранено: {processed_file} (записей: {len(df)})")
+
+# n = 4
+# process_raw_candles(raw_file=f"data\\raw_data\samples\\raw\\raw_candle_{n}.csv",processed_file=f"data\\raw_data\samples\processing\processing_candle_{n}.csv" )
