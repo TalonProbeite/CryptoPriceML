@@ -2,9 +2,9 @@ import pandas as pd
 
 
 def process_candle_data(
-    input_file: str = "data\\raw_data\samples\\raw_candle_test.csv",
-    output_file: str = "data\\raw_data\samples\\processed_candle_test.csv",
-    threshold: float = 0.1
+    input_file: str = "data\\raw_data\samples\\ready\dataset.csv",
+    output_file: str = "data\\raw_data\samples\\ready\dataset_test.csv",
+    threshold: float = 0.5
 ) -> None:
     """
     Process raw candle CSV data by adding up, down, and float columns based on price changes.
@@ -30,22 +30,6 @@ def process_candle_data(
         >>> process_candle_data("raw_data.csv", "processed_data.csv", 0.5)
         >>> process_candle_data()  # Uses all default parameters
     """
-    try:
-        # Read the input CSV file
-        df = pd.read_csv(input_file)
-
-        # Validate required columns
-        required_columns = ['timestamp', 'close']
-        if not all(col in df.columns for col in required_columns):
-            raise ValueError(
-                f"Input file must contain columns: {required_columns}")
-
-    except FileNotFoundError:
-        raise FileNotFoundError(f"Input file not found: {input_file}")
-    except pd.errors.EmptyDataError:
-        raise pd.errors.EmptyDataError("Input CSV file is empty")
-    except Exception as e:
-        raise ValueError(f"Error reading input file: {e}")
 
     # Convert timestamp to datetime and sort data chronologically
     df['timestamp'] = pd.to_datetime(df['timestamp'])
