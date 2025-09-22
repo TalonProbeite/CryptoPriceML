@@ -114,4 +114,4 @@ history = model.fit(
 
 plot_training_history(history)
 
-model.save("models/crypto_predictor_v8.keras")  # новый формат
+model.save("models/crypto_predictor_v11.keras")  # новый формат
