@@ -3,7 +3,7 @@ from pathlib import Path
 
 
 def normalize_data(
-    file_path: str = "data\\raw_data\samples\\ready\processing_candle.csv"
+    file_path: str = "data\\raw_data\samples\\ready\processing_candle (6).csv"
 ) -> None:
     """
     Normalize numerical columns in processed_candle_1.csv by removing rows with NaN
@@ -30,7 +30,7 @@ def normalize_data(
 
     # Define columns to normalize
     columns_to_normalize = ['open', 'high', 'low',
-                            'close', 'volume', 'SMA_12', 'EMA_12', 'WMA_12']
+                            'close', 'volume', 'SMA_12', 'EMA_12', 'WMA_12', 'EMA_26', 'MACD', 'Signal', 'L14', 'H14', '%K', '%D', 'open_lag1', 'high_lag1', 'low_lag1', 'close_lag1', 'volume_lag1', 'open_lag2', 'high_lag2', 'low_lag2', 'close_lag2', 'volume_lag2', 'open_lag3', 'high_lag3', 'low_lag3', 'close_lag3', 'volume_lag3']
 
     # Check for missing columns
     missing_cols = [
