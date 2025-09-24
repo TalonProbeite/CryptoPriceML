@@ -86,10 +86,12 @@ test_dataset = tf.data.Dataset.from_tensor_slices((X_test, y_test)).batch(32)
 num_classes = y.shape[1]
 model = Sequential([
     Input(shape=(X.shape[1],)),
+    Dense(128, activation="relu"),
+    Dropout(0.3),
     Dense(64, activation="relu"),
     Dropout(0.3),
-    Dense(32, activation="relu"),
-    Dropout(0.3),
+    # Dense(128, activation="relu"),
+    # Dropout(0.3),
     Dense(num_classes, activation="softmax")
 ])
 
@@ -114,4 +116,4 @@ history = model.fit(
 
 plot_training_history(history)
 
-model.save("models/crypto_predictor_v11.keras")  # новый формат
+model.save("models/crypto_predictor_premium1.keras")  # новый формат
