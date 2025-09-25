@@ -1,227 +1,92 @@
 import pandas as pd
-import numpy as np
-from pathlib import Path
-from typing import Optional
+import ta
 
+def processing_data(threshold: float = 0.1):
+    # Загружаем сырые данные
+    raw_dt = pd.read_csv("data\\raw_data\\samples\\raw_dataset.csv")
 
-# def process_raw_candles(
-#     raw_file: str,
-#     processed_file: Optional[str] = None,
-#     threshold_pct: float = 0.073,
-#     sma_period: int = 12,
-#     ema_period: int = 12,
-#     wma_period: int = 12,
-#     ema26_period: int = 26,
-#     macd_signal_period: int = 9,
-#     delet_incomplete_lines:bool = True,
-#     delet_timestamp: bool = True 
-# ) -> pd.DataFrame:
-#     """
-#     Прочитать raw CSV со столбцами (timestamp, open, high, low, close, volume),
-#     посчитать тренды (up, down, float) и индикаторы:
-#       - SMA_{sma_period}
-#       - EMA_{ema_period}
-#       - WMA_{wma_period}
-#       - EMA_{ema26_period}
-#       - MACD  = EMA_{ema_period} - EMA_{ema26_period}
-#       - Signal = EMA of MACD (span = macd_signal_period)
-#     Сохранить в processed_file (если None — создаётся рядом с raw_file с префиксом "processed_").
-#     Возвращает pandas.DataFrame.
-#     """
-#     raw_path = Path(raw_file)
-#     if not raw_path.is_file():
-#         raise FileNotFoundError(f"File not found: {raw_file}")
+    # Проверим наличие нужных колонок
+    required_cols = ["open", "high", "low", "close", "volume"]
+    for col in required_cols:
+        if col not in raw_dt.columns:
+            raise ValueError(f"Нет колонки {col} в датасете")
 
-#     df = pd.read_csv(raw_path)
+    df = pd.DataFrame()
 
-#     # Проверим минимум необходимых колонок
-#     if "timestamp" not in df.columns or "close" not in df.columns:
-#         raise KeyError("CSV должен содержать как минимум колонки 'timestamp' и 'close'")
+    # --- Close (в процентах) ---
+    df["Close_t"]     = raw_dt["close"].pct_change(1) * 100
+    df["Close_(t-1)"] = raw_dt["close"].pct_change(2) * 100
+    df["Close_(t-2)"] = raw_dt["close"].pct_change(3) * 100
 
-#     if df.empty:
-#         raise ValueError("CSV пустой")
+    # --- Volume (в процентах) ---
+    df["Volume_t"]     = raw_dt["volume"].pct_change(1) * 100
+    df["Volume_(t-1)"] = raw_dt["volume"].pct_change(2) * 100
+    df["Volume_(t-2)"] = raw_dt["volume"].pct_change(3) * 100
 
-#     # datetime и сортировка
-#     df["timestamp"] = pd.to_datetime(df["timestamp"])
-#     df = df.sort_values("timestamp").reset_index(drop=True)
+    # --- Derived features из свечей ---
+    df["Body_size"] = (raw_dt["close"] - raw_dt["open"]).abs()
+    df["Range"] = raw_dt["high"] - raw_dt["low"]
+    df["Body/Range_ratio"] = df["Body_size"] / df["Range"].replace(0, 1)  # защита от деления на 0
+    df["Upper_shadow"] = raw_dt["high"] - raw_dt[["open", "close"]].max(axis=1)
+    df["Lower_shadow"] = raw_dt[["open", "close"]].min(axis=1) - raw_dt["low"]
 
-#     # Тренды: сравнение текущего close с next close
-#     next_close = df["close"].shift(-1)
-#     # берём абсолютное % изменение; защищаемся от деления на 0
-#     with np.errstate(divide="ignore", invalid="ignore"):
-#         pct_change = (next_close - df["close"]).abs() / df["close"] * 100
+    # --- RSI (14) ---
+    df["RSI_14"] = ta.momentum.RSIIndicator(close=raw_dt["close"], window=14).rsi()
 
-#     # инициализация
-#     df["up"] = 0
-#     df["down"] = 0
-#     df["flat"] = 0
+    # --- MACD (12, 26, 9) ---
+    macd = ta.trend.MACD(close=raw_dt["close"], window_slow=26, window_fast=12, window_sign=9)
+    df["MACD"] = macd.macd()
+    df["MACD_signal"] = macd.macd_signal()
+    df["MACD_diff"] = macd.macd_diff()
 
-#     up_mask = (next_close > df["close"]) & (pct_change > threshold_pct)
-#     down_mask = (next_close < df["close"]) & (pct_change > threshold_pct)
-#     float_mask = ~(up_mask | down_mask)  # включает последний ряд с NaN next_close
+    # --- ATR (14) ---
+    df["ATR_14"] = ta.volatility.AverageTrueRange(
+        high=raw_dt["high"],
+        low=raw_dt["low"],
+        close=raw_dt["close"],
+        window=14
+    ).average_true_range()
 
-#     df.loc[up_mask, "up"] = 1
-#     df.loc[down_mask, "down"] = 1
-#     df.loc[float_mask, "flat"] = 1
+    # --- Bollinger Bands (20, 2) ---
+    bb = ta.volatility.BollingerBands(close=raw_dt["close"], window=20, window_dev=2)
+    df["BB_bbm"] = bb.bollinger_mavg()     # средняя линия
+    df["BB_bbh"] = bb.bollinger_hband()    # верхняя граница
+    df["BB_bbl"] = bb.bollinger_lband()    # нижняя граница
+    df["BB_bbw"] = bb.bollinger_wband()    # ширина (сжатие/расширение)
+    df["BB_percent"] = bb.bollinger_pband()  # позиция цены внутри полос
 
-#     # Индикаторы
-#     # SMA
-#     df[f"SMA_{sma_period}"] = df["close"].rolling(window=sma_period).mean()
-#     # EMA
-#     df[f"EMA_{ema_period}"] = df["close"].ewm(span=ema_period, adjust=False).mean()
-#     # WMA
-#     def _wma(series: pd.Series, period: int) -> pd.Series:
-#         weights = np.arange(1, period + 1)
-#         return series.rolling(period).apply(lambda x: np.dot(x, weights) / weights.sum(), raw=True)
-#     df[f"WMA_{wma_period}"] = _wma(df["close"], wma_period)
+    # --- EMA (10) и EMA (50) ---
+    df["EMA_10"] = ta.trend.EMAIndicator(close=raw_dt["close"], window=10).ema_indicator()
+    df["EMA_50"] = ta.trend.EMAIndicator(close=raw_dt["close"], window=50).ema_indicator()
+    df["EMA_diff"] = df["EMA_10"] - df["EMA_50"]  # сигнал для "золотого креста"
 
-#     # EMA 26, MACD, Signal
-#     df[f"EMA_{ema26_period}"] = df["close"].ewm(span=ema26_period, adjust=False).mean()
-#     df["MACD"] = df[f"EMA_{ema_period}"] - df[f"EMA_{ema26_period}"]
-#     df["Signal"] = df["MACD"].ewm(span=macd_signal_period, adjust=False).mean()
-#     n = 14
-#     df['L14'] = df['low'].rolling(window=n).min()
-#     df['H14'] = df['high'].rolling(window=n).max()
-#     df['%K'] = (df['close'] - df['L14']) / (df['H14'] - df['L14']) * 100
-#     df['%D'] = df['%K'].rolling(window=3).mean()
+    # --- Целевая переменная (Up/Down/Flat) ---
+    future_close = raw_dt["close"].shift(-1)
+    change_pct = (future_close - raw_dt["close"]) / raw_dt["close"] * 100
 
-#     # Переместим колонки трендов в конец
-#     trend_cols = ["up", "down", "flat"]
-#     cols = [c for c in df.columns if c not in trend_cols] + trend_cols
-#     df = df[cols]
+    df["Up"]   = (change_pct > threshold).astype(int)
+    df["Down"] = (change_pct < -threshold).astype(int)
+    df["Flat"] = ((change_pct >= -threshold) & (change_pct <= threshold)).astype(int)
 
-#     if delet_incomplete_lines:
-#         df = df.dropna().reset_index(drop=True)
-#     if delet_timestamp:
-#         df = df.drop(columns=["timestamp"])
+    # Убираем NaN (первые из-за pct_change и последние из-за shift)
+    df = df.dropna().reset_index(drop=True)
 
+    # Сохраняем
+    output_path = "data\\ready_data\samples\dataset.csv"
+    df.to_csv(output_path, index=False)
+    print(f"✅ Таблица сохранена: {output_path}")
 
-
-#     # Сохранение
-#     if processed_file is None:
-#         processed_file = raw_path.parent / f"processed_{raw_path.name}"
-#     else:
-#         processed_file = Path(processed_file)
-#     df.to_csv(processed_file, index=False)
-
-#     print(f"Сохранено: {processed_file} (записей: {len(df)})")
-
-import pandas as pd
-import numpy as np
-from pathlib import Path
-from typing import Optional
-
-def process_raw_candles(
-    raw_file: str,
-    processed_file: Optional[str] = None,
-    threshold_pct: float = 0.073,
-    sma_period: int = 12,
-    ema_period: int = 12,
-    wma_period: int = 12,
-    ema26_period: int = 26,
-    macd_signal_period: int = 9,
-    delet_incomplete_lines: bool = True,
-    delet_timestamp: bool = True
-) -> pd.DataFrame:
-    """
-    Прочитать raw CSV со столбцами (timestamp, open, high, low, close, volume),
-    посчитать тренды (up, down, flat) и индикаторы:
-      - SMA_{sma_period}
-      - EMA_{ema_period}
-      - WMA_{wma_period}
-      - EMA_{ema26_period}
-      - MACD  = EMA_{ema_period} - EMA_{ema26_period}
-      - Signal = EMA of MACD (span = macd_signal_period)
-      - Стохастик %K и %D
-      - open/high/low/close/volume трёх предыдущих свечей
-    Сохранить в processed_file (если None — создаётся рядом с raw_file с префиксом "processed_").
-    Возвращает pandas.DataFrame.
-    """
-    raw_path = Path(raw_file)
-    if not raw_path.is_file():
-        raise FileNotFoundError(f"File not found: {raw_file}")
-
-    df = pd.read_csv(raw_path)
-
-    # Проверим минимум необходимых колонок
-    required_cols = {"timestamp", "open", "high", "low", "close", "volume"}
-    if not required_cols.issubset(df.columns):
-        raise KeyError(f"CSV должен содержать колонки: {required_cols}")
-
-    if df.empty:
-        raise ValueError("CSV пустой")
-
-    # datetime и сортировка
-    df["timestamp"] = pd.to_datetime(df["timestamp"])
-    df = df.sort_values("timestamp").reset_index(drop=True)
-
-    # Тренды: сравнение текущего close с next close
-    next_close = df["close"].shift(-1)
-    with np.errstate(divide="ignore", invalid="ignore"):
-        pct_change = (next_close - df["close"]).abs() / df["close"] * 100
-
-    df["up"] = 0
-    df["down"] = 0
-    df["flat"] = 0
-
-    up_mask = (next_close > df["close"]) & (pct_change > threshold_pct)
-    down_mask = (next_close < df["close"]) & (pct_change > threshold_pct)
-    float_mask = ~(up_mask | down_mask)
-
-    df.loc[up_mask, "up"] = 1
-    df.loc[down_mask, "down"] = 1
-    df.loc[float_mask, "flat"] = 1
-
-    # Индикаторы
-    df[f"SMA_{sma_period}"] = df["close"].rolling(window=sma_period).mean()
-    df[f"EMA_{ema_period}"] = df["close"].ewm(span=ema_period, adjust=False).mean()
-
-    def _wma(series: pd.Series, period: int) -> pd.Series:
-        weights = np.arange(1, period + 1)
-        return series.rolling(period).apply(lambda x: np.dot(x, weights) / weights.sum(), raw=True)
-
-    df[f"WMA_{wma_period}"] = _wma(df["close"], wma_period)
-
-    df[f"EMA_{ema26_period}"] = df["close"].ewm(span=ema26_period, adjust=False).mean()
-    df["MACD"] = df[f"EMA_{ema_period}"] - df[f"EMA_{ema26_period}"]
-    df["Signal"] = df["MACD"].ewm(span=macd_signal_period, adjust=False).mean()
-
-    # Стохастик
-    n = 14
-    df["L14"] = df["low"].rolling(window=n).min()
-    df["H14"] = df["high"].rolling(window=n).max()
-    df["%K"] = (df["close"] - df["L14"]) / (df["H14"] - df["L14"]) * 100
-    df["%D"] = df["%K"].rolling(window=3).mean()
-
-    # === Добавляем open, high, low, close, volume из 3 предыдущих свечей ===
-    for i in range(1, 4):  # 1, 2, 3 свечи назад
-        df[f"open_lag{i}"] = df["open"].shift(i)
-        df[f"high_lag{i}"] = df["high"].shift(i)
-        df[f"low_lag{i}"] = df["low"].shift(i)
-        df[f"close_lag{i}"] = df["close"].shift(i)
-        df[f"volume_lag{i}"] = df["volume"].shift(i)
-
-    # Переместим тренды в конец
-    trend_cols = ["up", "down", "flat"]
-    cols = [c for c in df.columns if c not in trend_cols] + trend_cols
-    df = df[cols]
-
-    if delet_incomplete_lines:
-        df = df.dropna().reset_index(drop=True)
-    if delet_timestamp:
-        df = df.drop(columns=["timestamp"])
-
-    # Сохранение
-    if processed_file is None:
-        processed_file = raw_path.parent / f"processed_{raw_path.name}"
-    else:
-        processed_file = Path(processed_file)
-    df.to_csv(processed_file, index=False)
-
-    print(f"Сохранено: {processed_file} (записей: {len(df)})")
+    # Статистика распределения классов
+    total = len(df)
+    up_pct = df["Up"].sum() / total * 100
+    down_pct = df["Down"].sum() / total * 100
+    flat_pct = df["Flat"].sum() / total * 100
+    print(f"📊 Up: {up_pct:.2f}%, Down: {down_pct:.2f}%, Flat: {flat_pct:.2f}%")
 
     return df
 
 
 
-process_raw_candles(raw_file=f"data\\raw_data\samples\\raw\\raw_dataset.csv",processed_file=f"data\\raw_data\samples\processing\processing_candle.csv" )
+
+
+processing_data()
