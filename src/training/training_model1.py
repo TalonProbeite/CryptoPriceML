@@ -3,11 +3,10 @@ import pandas as pd
 import tensorflow as tf
 from keras.layers import Dense, Input, Dropout
 from keras.models import Sequential
-from keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau
 from sklearn.preprocessing import StandardScaler
 import matplotlib.pyplot as plt
 import numpy as np
-
+import keras_tuner
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
@@ -67,32 +66,58 @@ train_dataset = tf.data.Dataset.from_tensor_slices((X_train, y_train)).shuffle(l
 test_dataset = tf.data.Dataset.from_tensor_slices((X_test, y_test)).batch(32)
 
 num_classes = y.shape[1]
-model = Sequential([
-    Input(shape=(X.shape[1],)),
-    Dense(128, activation="relu"),
-    Dropout(0.3),
-    Dense(64, activation="relu"),
-    Dropout(0.3),
-    Dense(num_classes, activation="softmax")
-])
 
-model.compile(
-    optimizer=tf.keras.optimizers.Adam(learning_rate=1e-4),
+def build_model(hp):
+    model = Sequential()
+    model.add(Input(shape=(X.shape[1],))) 
+    model.add(Dense(
+            units=hp.Int("units_1", min_value=32, max_value=512, step=32),
+            activation=hp.Choice("activation", ["relu", "tanh","sigmoid"]),
+        ))
+    if hp.Boolean("dropout_1"):
+        model.add(Dropout(rate=0.25))
+    model.add(Dense(
+            units=hp.Int("units_2", min_value=16, max_value=256, step=16),
+            activation=hp.Choice("activation", ["relu", "tanh","sigmoid"]), 
+    ))
+    if hp.Boolean("dropout_2"):
+        model.add(Dropout(rate=0.25))
+    model.add(Dense(
+        units=3,activation="softmax"
+    ))
+    model.compile(
+    optimizer="adam",
     loss="categorical_crossentropy",
-    metrics=["accuracy"]
+    metrics=["accuracy"])
+
+    return model
+
+
+tuner = keras_tuner.BayesianOptimization(
+    hypermodel=build_model,
+    objective="val_accuracy",
+    max_trials=100,      # максимум попыток
+    num_initial_points=10,  # сколько случайных запустить сначала (чтобы "обучить" модель поиска)
+    overwrite=True,
+    directory="models",
+    project_name="tuning_models_bayes",
 )
 
-lr_reduce = ReduceLROnPlateau(monitor="val_loss", factor=0.5, patience=5, verbose=1)
-early_stop = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True)
-checkpoint = ModelCheckpoint('best_model.keras', monitor='val_loss', save_best_only=True)
-
-history = model.fit(
-    train_dataset,
+tuner.search(train_dataset,
     validation_data=test_dataset,
     epochs=50,
-    callbacks=[early_stop, checkpoint, lr_reduce]
-)
+    verbose=1)
 
-plot_training_history(history)
+best_trial = tuner.oracle.get_best_trials(num_trials=1)[0]
 
-model.save("models/crypto_predictor_premium1.keras")
+print("\n=== Лучший результат ===")
+print(f"Trial ID: {best_trial.trial_id}")
+print(f"Val Accuracy: {best_trial.score:.4f}")
+print("Hyperparameters:")
+for hp, val in best_trial.hyperparameters.values.items():
+    print(f"  {hp}: {val}")
+
+
+print("\n=== Все trial-ы ===")
+for trial_id, trial in tuner.oracle.trials.items():
+    print(f"Trial {trial_id} - Val Accuracy: {trial.score:.4f}")
