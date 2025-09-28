@@ -18,33 +18,7 @@ def get_data_xy(path="data\\raw_data\\samples\\processing\\processing_candle1.cs
     return X, y
 
 
-def plot_training_history(history, save_path=None):
-    plt.figure(figsize=(10, 4))
-
-    plt.subplot(1, 2, 1)
-    plt.plot(history.history['loss'], label='Train Loss')
-    plt.plot(history.history['val_loss'], label='Validation Loss')
-    plt.xlabel('Epoch')
-    plt.ylabel('Loss')
-    plt.title('Training and Validation Loss')
-    plt.legend()
-
-    plt.subplot(1, 2, 2)
-    plt.plot(history.history['accuracy'], label='Train Accuracy')
-    plt.plot(history.history['val_accuracy'], label='Validation Accuracy')
-    plt.xlabel('Epoch')
-    plt.ylabel('Accuracy')
-    plt.title('Training and Validation Accuracy')
-    plt.legend()
-
-    plt.tight_layout()
-    if save_path:
-        plt.savefig(save_path)
-    else:
-        plt.show()
-
-
-X, y = get_data_xy('data\\ready_data\\samples\\dataset.csv')
+X, y = get_data_xy('data\\ready_data\\samples\\dataset_4.csv')
 
 scaler = StandardScaler()
 X = scaler.fit_transform(X)
@@ -75,13 +49,13 @@ def build_model(hp):
             activation=hp.Choice("activation", ["relu", "tanh","sigmoid"]),
         ))
     if hp.Boolean("dropout_1"):
-        model.add(Dropout(rate=0.25))
+        model.add(Dropout(rate=hp.Float("dropout_rate_1",min_value=0.1,max_value=0.4,step=0.1)))
     model.add(Dense(
             units=hp.Int("units_2", min_value=16, max_value=256, step=16),
             activation=hp.Choice("activation", ["relu", "tanh","sigmoid"]), 
     ))
     if hp.Boolean("dropout_2"):
-        model.add(Dropout(rate=0.25))
+        model.add(Dropout(rate=hp.Float("dropout_rate_2",min_value=0.1,max_value=0.4,step=0.1)))
     model.add(Dense(
         units=3,activation="softmax"
     ))
@@ -96,11 +70,10 @@ def build_model(hp):
 tuner = keras_tuner.BayesianOptimization(
     hypermodel=build_model,
     objective="val_accuracy",
-    max_trials=100,      # максимум попыток
-    num_initial_points=10,  # сколько случайных запустить сначала (чтобы "обучить" модель поиска)
-    overwrite=True,
+    max_trials=15,      # максимум попыток
+    num_initial_points=5,  # сколько случайных запустить сначала (чтобы "обучить" модель поиска)
     directory="models",
-    project_name="tuning_models_bayes",
+    project_name="tuning_models_bayes_2_test",
 )
 
 tuner.search(train_dataset,
