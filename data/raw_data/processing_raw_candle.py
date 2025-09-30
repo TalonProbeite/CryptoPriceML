@@ -5,7 +5,7 @@ import numpy as np
 
 def processing_data_c5(threshold: float = 0.1):
     # Загружаем сырые данные
-    raw_dt = pd.read_csv("data\\raw_data\\samples\\raw_dataset.csv")
+    raw_dt = pd.read_csv("data\\raw_data\\samples\\raw_dataset.csv", parse_dates=True, index_col=0)
 
     # Проверим наличие нужных колонок
     required_cols = ["open", "high", "low", "close", "volume"]
@@ -19,7 +19,7 @@ def processing_data_c5(threshold: float = 0.1):
     df["Close_t"]     = raw_dt["close"].pct_change(1) * 100
     df["Close_(t-1)"] = raw_dt["close"].pct_change(2) * 100
     df["Close_(t-2)"] = raw_dt["close"].pct_change(3) * 100
-    df["Close_(t-3)"] = raw_dt['close'].pct_change(4) * 100
+    df["Close_(t-3)"] = raw_dt["close"].pct_change(4) * 100
     df["Close_(t-4)"] = raw_dt["close"].pct_change(5) * 100
 
     # --- Volume (в процентах) ---
@@ -66,17 +66,17 @@ def processing_data_c5(threshold: float = 0.1):
     df["EMA_10"] = ta.trend.EMAIndicator(close=raw_dt["close"], window=10).ema_indicator()
     df["EMA_50"] = ta.trend.EMAIndicator(close=raw_dt["close"], window=50).ema_indicator()
     df["EMA_diff"] = df["EMA_10"] - df["EMA_50"]
-    df['EMA_200'] = ta.trend.EMAIndicator(close=raw_dt["close"], window=200).ema_indicator()
+    df["EMA_200"] = ta.trend.EMAIndicator(close=raw_dt["close"], window=200).ema_indicator()
 
-    # --- NEW: Distance_to_swing (High/Low за 48 свечей ≈ 1 день) ---
+    # --- Distance_to_swing (High/Low за 48 свечей ≈ 1 день) ---
     N = 48
     df["Distance_to_High"] = raw_dt["high"].rolling(N).max() - raw_dt["close"]
     df["Distance_to_Low"] = raw_dt["close"] - raw_dt["low"].rolling(N).min()
 
-    # --- NEW: ATR_ratio ---
+    # --- ATR_ratio ---
     df["ATR_ratio"] = df["ATR_14"] / df["ATR_14"].rolling(30).median()
 
-    # --- NEW: OBV + slope ---
+    # --- OBV + slope ---
     obv = [0]  # OBV начальное значение
     for i in range(1, len(raw_dt)):
         if raw_dt["close"].iloc[i] > raw_dt["close"].iloc[i-1]:
@@ -100,7 +100,7 @@ def processing_data_c5(threshold: float = 0.1):
     df = df.dropna().reset_index(drop=True)
 
     # Сохраняем
-    output_path = "data\\ready_data\\samples\\dataset_4.csv"
+    output_path = "data\\ready_data\\samples\\dataset_5.csv"
     df.to_csv(output_path, index=False)
     print(f"✅ Таблица сохранена: {output_path}")
 
@@ -112,6 +112,7 @@ def processing_data_c5(threshold: float = 0.1):
     print(f"📊 Up: {up_pct:.2f}%, Down: {down_pct:.2f}%, Flat: {flat_pct:.2f}%")
 
     return df
+
 
 
 

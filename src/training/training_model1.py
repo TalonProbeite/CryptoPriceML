@@ -7,18 +7,20 @@ from sklearn.preprocessing import StandardScaler
 import matplotlib.pyplot as plt
 import numpy as np
 import keras_tuner
+# from  src.utils.get_data import get_data_from_csv
+import sys
+
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+# sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
 
-
-def get_data_xy(path="data\\raw_data\\samples\\processing\\processing_candle1.csv"):
+def get_data_from_csv(path="data\\raw_data\samples\processing\processing_candle1.csv"):
     data = pd.read_csv(path)
     X = data.iloc[:, :-3].values
     y = data.iloc[:, -3:].values
-    return X, y
+    return [X,y]
 
-
-X, y = get_data_xy('data\\ready_data\\samples\\dataset_4.csv')
+X, y = get_data_from_csv('data\\ready_data\\samples\\dataset_4.csv')
 
 scaler = StandardScaler()
 X = scaler.fit_transform(X)
@@ -70,10 +72,10 @@ def build_model(hp):
 tuner = keras_tuner.BayesianOptimization(
     hypermodel=build_model,
     objective="val_accuracy",
-    max_trials=15,      # максимум попыток
-    num_initial_points=5,  # сколько случайных запустить сначала (чтобы "обучить" модель поиска)
+    max_trials=150,      # максимум попыток
+    num_initial_points=15,  # сколько случайных запустить сначала (чтобы "обучить" модель поиска)
     directory="models",
-    project_name="tuning_models_bayes_2_test",
+    project_name="tuning_models_baye",
 )
 
 tuner.search(train_dataset,
@@ -94,3 +96,10 @@ for hp, val in best_trial.hyperparameters.values.items():
 print("\n=== Все trial-ы ===")
 for trial_id, trial in tuner.oracle.trials.items():
     print(f"Trial {trial_id} - Val Accuracy: {trial.score:.4f}")
+
+
+best_models = tuner.get_best_models(num_models=1)
+best_model = best_models[0]
+
+# best_model уже содержит веса лучшей эпохи
+best_model.save("best_model_full.h5")

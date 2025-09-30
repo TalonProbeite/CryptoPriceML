@@ -10,7 +10,7 @@ def get_raw_candles_csv(
     symbol: str = "BTCUSDT",
     interval: str = "30",
     category: str = "spot",
-    total_candles: int = 73000,
+    total_candles: int = 5,
     candles_per_file: int = 1000
 ) -> None:
     """
