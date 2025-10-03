@@ -31,10 +31,6 @@ def main():
     def switch_model():
         root, dirs, files = next(os.walk("models\\MLP"))
         dir_mlp = dirs  
-        root, dirs, files = next(os.walk("models\\GRU"))
-        dir_gru = dirs
-        root, dirs, files = next(os.walk("models\\LSTM"))
-        dir_lstm = dirs 
         os.system("cls")
         print("select model number:")
         n = 1
@@ -45,20 +41,6 @@ def main():
         for el in dir_mlp:
             print(f"    {n}.{el}")
             models[n] = "models\MLP\\" + el 
-            n+=1
-        print("GRU:")
-        if dir_gru == []:
-            print(" model is missing")
-        for el in dir_gru:
-            print(f"    {n}.{el}")
-            models[n] = "models\GRU\\" + el 
-            n+=1
-        print("LSTM:")
-        if dir_lstm == []:
-            print(" model is missing")
-        for el in dir_lstm:
-            print(f"    {n}.{el}")
-            models[n] = "models\LSTM\\" + el 
             n+=1
         model = models[int(input())]
         return model
@@ -87,6 +69,7 @@ def main():
                 "open": float, "high": float, "low": float,
                 "close": float, "volume": float
             })
+            print(raw_dt)
             df = pd.DataFrame()
 
             # --- Close (в процентах) ---
