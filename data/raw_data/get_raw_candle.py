@@ -6,7 +6,7 @@ import math
 
 
 def get_raw_candles_csv(
-    save_path: str = "data\\raw_data\\samples\\raw\\",
+    save_path: str = "data\\raw_data\\samples\\",
     symbol: str = "BTCUSDT",
     interval: str = "30",
     category: str = "spot",
@@ -30,7 +30,7 @@ def get_raw_candles_csv(
     # Ensure folder exists
     os.makedirs(save_path, exist_ok=True)
 
-    # End time = now (UTC). API берет только закрытые свечи
+    # End time = now (UTC). API fetches only closed candles
     end_ts = int(datetime.now(timezone.utc).timestamp() * 1000)
 
     fetched = 0
@@ -56,10 +56,10 @@ def get_raw_candles_csv(
 
         klines = data["result"]["list"]
         if not klines:
-            print("Нет больше данных для загрузки")
+            print("No more data to fetch")
             break
 
-        # Формируем DataFrame
+        # Create DataFrame
         klines_ohclv = [row[:6] for row in klines]
         df = pd.DataFrame(klines_ohclv, columns=[
             "timestamp", "open", "high", "low", "close", "volume"
@@ -70,7 +70,7 @@ def get_raw_candles_csv(
             "close": float, "volume": float
         })
 
-        # Сохраняем кусками по candles_per_file
+        # Save in chunks of candles_per_file
         for start in range(0, len(df), candles_per_file):
             chunk = df.iloc[start:start + candles_per_file]
             if chunk.empty:
@@ -80,15 +80,12 @@ def get_raw_candles_csv(
             full_path = os.path.join(save_path, filename)
             chunk.to_csv(full_path, index=False)
 
-            print(f"Сохранено {len(chunk)} свечей в {full_path}")
+            print(f"Saved {len(chunk)} candles to {full_path}")
             file_index += 1
 
         fetched += len(df)
-        # Сдвигаем конец выборки на самый ранний timestamp текущего ответа
+        # Shift the end of the sample to the earliest timestamp of the current response
         end_ts = int(klines[-1][0]) - 1  
 
-    print(f"Всего собрано свечей: {fetched}")
+    print(f"Total candles collected: {fetched}")
 
-
-
-get_raw_candles_csv()
