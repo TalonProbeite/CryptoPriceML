@@ -69,7 +69,6 @@ def main():
                 "open": float, "high": float, "low": float,
                 "close": float, "volume": float
             })
-            print(raw_dt)
             df = pd.DataFrame()
 
             # --- Close (в процентах) ---
