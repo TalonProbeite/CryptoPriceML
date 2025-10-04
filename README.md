@@ -49,8 +49,8 @@ _Normalized data is fed to the input of the neural network._
 ### Models
 The models perform the same functionality, have similar performance parameters, but have different structures.
 
-Model A: `models\MLP\best_model_1`
-Model B: `models\MLP\best_model_2`
+Model A: `models\MLP\best_model_1`<br>
+Model B: `models\MLP\best_model_2`<br>
 
 |   | Model A  | Model B |
 |:------------- |:---------------:| -------------:|
@@ -65,48 +65,48 @@ Model B: `models\MLP\best_model_2`
 | Loss function | Categorical Crossentropy | Categorical Crossentropy |
 
 ### Metrics & Visualization
-Model A: `models\MLP\best_model_1`
-Model B: `models\MLP\best_model_2`
+Model A: `models\MLP\best_model_1`<br>
+Model B: `models\MLP\best_model_2`<br>
 
 **Model A:**
 
-**_Accuracy / Loss:_**
-![Accuracy model A](src\test\results\accuracy_model_1.jpg)
+**_Accuracy / Loss:_** <br>
+![Accuracy model A](src/test/results/accuracy_model_1.jpg)
+<br>
+![Loss model A](src/test/results/loss_model_1.jpg)
 
-![Loss model A](src\test\results\loss_model_1.jpg)
+**_Confusion matrix:_** <br>
+![Confusion matrix model A](src/test/results/conf_matrix_model_1.jpg)
 
-**_Confusion matrix:_**
-![Confusion matrix model A](src\test\results\conf_matrix_model_1.jpg)
+**_Distribution:_** 
+Class distribution (y_test): [4708 4865 4988] <br>
+Prediction distribution: [4483 5133 4945] <br>
 
-**_Distribution:_**
-Class distribution (y_test): [4708 4865 4988]
-Prediction distribution: [4483 5133 4945]
+**_Receiver Operating Characteristic:_** <br>
+![ROC model A](src/test/results/ROC_model_1.jpg)
 
-**_Receiver Operating Characteristic:_**
-![ROC model A](src\test\results\ROC_model_1.jpg)
-
-**_Classification report:_**
-![Classification report model A](src\test\results\class_rep_model_1.jpg)
+**_Classification report:_** <br>
+![Classification report model A](src/test/results/class_rep_model_1.jpg)
 
 **Model B:**
 
-**_Accuracy / Loss:_**
-![Accuracy model A](src\test\results\accuracy_model_2.jpg)
+**_Accuracy / Loss:_** <br>
+![Accuracy model A](src/test/results/accuracy_model_2.jpg)
+<br>
+![Loss model A](src/test/results/loss_model_2.jpg)
 
-![Loss model A](src\test\results\loss_model_2.jpg)
+**_Confusion matrix:_** <br>
+![Confusion matrix model A](src/test/results/conf_matrix_model_2.jpg)
 
-**_Confusion matrix:_**
-![Confusion matrix model A](src\test\results\conf_matrix_model_2.jpg)
+**_Distribution:_** <br>
+Class distribution (y_test): [4708 4865 4988] <br>
+Prediction distribution: [4400 5208 4953] <br>
 
-**_Distribution:_**
-Class distribution (y_test): [4708 4865 4988]
-Prediction distribution: [4400 5208 4953]
+**_Receiver Operating Characteristic:_** <br>
+![ROC model A](src/test/results/ROC_model_2.jpg)
 
-**_Receiver Operating Characteristic:_**
-![ROC model A](src\test\results\ROC_model_2.jpg)
-
-**_Classification report:_**
-![Classification report model A](src\test\results\class_rep_model_2.jpg)
+**_Classification report:_** <br>
+![Classification report model A](src/test/results/class_rep_model_2.jpg)
 
 ### Usage
 
