@@ -19,7 +19,7 @@ def get_data_from_csv(path="data\\raw_data\samples\processing\processing_candle1
     y = data.iloc[:, -3:].values
     return [X,y]
 
-X, y = get_data_from_csv('data\\ready_data\\samples\\dataset_4.csv')
+X, y = get_data_from_csv('data\\ready_data\\samples\\dataset_eth_30.csv')
 
 scaler = StandardScaler()
 X = scaler.fit_transform(X)
@@ -46,7 +46,10 @@ num_classes = y.shape[1]
 
 model = Sequential()
 model.add(Input(shape=(X.shape[1],)))
-model.add(Dense(units=992, activation="relu"))
+model.add(Dense(units=450, activation="relu"))
+model.add(Dropout(rate=0.2))
+model.add(Dense(units=20, activation="relu"))
+model.add(Dropout(rate=0.2))
 model.add(Dense(units=3,activation="softmax"))
 
 model.compile(

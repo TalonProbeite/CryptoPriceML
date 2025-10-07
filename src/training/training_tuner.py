@@ -20,7 +20,7 @@ def get_data_from_csv(path="data\\raw_data\samples\processing\processing_candle1
     y = data.iloc[:, -3:].values
     return [X,y]
 
-X, y = get_data_from_csv('data\\ready_data\\samples\\dataset_4.csv')
+X, y = get_data_from_csv('data\\ready_data\samples\\dataset_btc_15.csv')
 
 scaler = StandardScaler()
 X = scaler.fit_transform(X)
