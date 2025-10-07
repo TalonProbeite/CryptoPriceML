@@ -111,4 +111,38 @@ def get_roc():
 
 
 
-get_roc()
+
+def get_acc():
+    # Загружаем модель
+    model = keras.models.load_model("models/MLP/best_model_1/best_model.keras")
+
+    # Загружаем данные
+    data = pd.read_csv("data/ready_data/samples/dataset_eth_30.csv")
+    X = data.iloc[:, :-3].values
+    y_true = data.iloc[:, -3:].values
+
+    # === Нормализация данных ===
+    # Z-score: (x - mean) / std
+    X_mean = X.mean(axis=0)
+    X_std = X.std(axis=0)
+    X_norm = (X - X_mean) / (X_std + 1e-8)  # добавляем 1e-8, чтобы избежать деления на ноль
+
+    # Предсказания
+    y_pred = model.predict(X_norm)
+
+    # Переводим предсказания в one-hot
+    y_pred_classes = np.zeros_like(y_pred)
+    y_pred_classes[np.arange(len(y_pred)), y_pred.argmax(axis=1)] = 1
+
+    # Считаем точность
+    correct = np.all(y_pred_classes == y_true, axis=1).sum()
+    acc = correct / len(y_true) * 100
+
+    print(f"Accuracy: {acc:.2f}%")
+    return acc
+
+# def get_class_balance():
+#     data = pd.read_csv()
+
+
+get_acc()
