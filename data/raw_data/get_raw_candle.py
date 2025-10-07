@@ -7,10 +7,10 @@ import math
 
 def get_raw_candles_csv(
     save_path: str = "data\\raw_data\\samples\\raw\\",
-    symbol: str = "BTCUSDT",
-    interval: str = "30",
+    symbol: str = "ETHUSDT",
+    interval: str = "5",
     category: str = "spot",
-    total_candles: int = 5,
+    total_candles: int = 100_000,
     candles_per_file: int = 1000
 ) -> None:
     """

@@ -3,9 +3,9 @@ import ta
 import numpy as np
 
 
-def processing_data_c5(threshold: float = 0.1):
+def processing_data_c5(threshold: float = 0.041):
     # Загружаем сырые данные
-    raw_dt = pd.read_csv("data\\raw_data\\samples\\raw_dataset.csv", parse_dates=True, index_col=0)
+    raw_dt = pd.read_csv("data\\raw_data\\samples\\raw_dataset_eth_5.csv", parse_dates=True, index_col=0)
 
     # Проверим наличие нужных колонок
     required_cols = ["open", "high", "low", "close", "volume"]
@@ -100,7 +100,7 @@ def processing_data_c5(threshold: float = 0.1):
     df = df.dropna().reset_index(drop=True)
 
     # Сохраняем
-    output_path = "data\\ready_data\\samples\\dataset_5.csv"
+    output_path = "data\\ready_data\\samples\\dataset_eth_5.csv"
     df.to_csv(output_path, index=False)
     print(f"✅ Таблица сохранена: {output_path}")
 

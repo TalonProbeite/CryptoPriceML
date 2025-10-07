@@ -4,7 +4,7 @@ import os
 
 
 
-def combine_csv_files(directory_path, output_filename='raw_dataset.csv'):
+def combine_csv_files(directory_path, output_filename='raw_dataset_eth_5.csv'):
     search_pattern = os.path.join(directory_path, '*.csv')
     csv_files = glob.glob(search_pattern)
     
